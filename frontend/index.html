@@ -438,6 +438,21 @@
                 justify-content: space-between;
             }
         }
+        /* Перенос длинных слов */
+        .task-card,
+        .task-title,
+        .comment-text,
+        .comment {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        /* Ограничение для описания задачи */
+        .task-description {
+            max-height: 150px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>

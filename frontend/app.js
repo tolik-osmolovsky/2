@@ -331,7 +331,7 @@ async function loadTasks() {
                         ${escapeHtml(task.title)}
                     </span>
                 </div>
-                ${task.description ? `<p style="margin: 8px 0 0 32px; color: #666; font-size: 14px;">📝 ${escapeHtml(task.description)}</p>` : ''}
+                ${task.description ? `<p class="task-description" style="margin: 8px 0 0 32px; color: #666; font-size: 14px; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; white-space: pre-wrap;">📝 ${escapeHtml(task.description)}</p>` : ''}
                 <div class="task-meta">
                     <span class="due-date">📅 ${formatDate(task.due_date)} ${task.due_time ? ' в ' + task.due_time.slice(0,5) : ''}</span>
                     <span>👤 Создал: ${escapeHtml(task.created_by_name) || 'Unknown'}</span>
