@@ -491,14 +491,14 @@ io.on('connection', (socket) => {
 const path = require('path');
 
 // Статические файлы (CSS, JS, изображения)
-app.use(express.static(path.join(__dirname, 'frontend')));
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Отдаём index.html для всех не-API маршрутов
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api')) {
     return next();
   }
-  res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+  res.sendFile(path.join(__dirname, '../frontend', 'index.html'));
 });
 
 // Запуск сервера
