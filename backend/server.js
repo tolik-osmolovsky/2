@@ -12,13 +12,21 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: "http://localhost:5500",
+    origin: [
+      "http://localhost:5500",           // для локальной разработки
+      "https://collaborative-daily.onrender.com"  // для продакшена
+    ],
     methods: ["GET", "POST"]
   }
 });
 
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+  origin: [
+    'http://localhost:5500',
+    'https://collaborative-daily.onrender.com'
+  ],
+  credentials: true
+}));app.use(express.json());
 
 // Подключение к PostgreSQL
 const pool = new Pool({
@@ -487,7 +495,69 @@ io.on('connection', (socket) => {
     console.log(`User ${socket.user.email} disconnected`);
   });
 });
+// Удаление пространства
+app.delete('/api/spaces/:spaceId', authenticateToken, async (req, res) => {
+  const { spaceId } = req.params;
+  const userId = req.user.id;
 
+  try {
+    // Проверяем, является ли пользователь владельцем
+    const spaceCheck = await pool.query(
+      'SELECT * FROM spaces WHERE id = $1 AND created_by = $2',
+      [spaceId, userId]
+    );
+
+    if (spaceCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Только владелец может удалить пространство' });
+    }
+
+    // Удаляем пространство (каскадно удалятся задачи, комментарии, участники)
+    await pool.query('DELETE FROM spaces WHERE id = $1', [spaceId]);
+
+    // Отправляем real-time уведомление
+    io.to(`space_${spaceId}`).emit('space_deleted', { spaceId });
+
+    res.json({ message: 'Пространство удалено' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Ошибка удаления' });
+  }
+});
+
+// Удаление задачи
+app.delete('/api/tasks/:taskId', authenticateToken, async (req, res) => {
+  const { taskId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    // Получаем задачу и проверяем доступ
+    const taskResult = await pool.query(
+      `SELECT t.*, sm.user_id 
+       FROM tasks t
+       JOIN space_members sm ON t.space_id = sm.space_id
+       WHERE t.id = $1 AND sm.user_id = $2`,
+      [taskId, userId]
+    );
+
+    if (taskResult.rows.length === 0) {
+      return res.status(403).json({ error: 'Доступ запрещен' });
+    }
+
+    const task = taskResult.rows[0];
+    const spaceId = task.space_id;
+
+    // Удаляем задачу
+    await pool.query('DELETE FROM tasks WHERE id = $1', [taskId]);
+
+    // Отправляем real-time уведомление
+    io.to(`space_${spaceId}`).emit('task_deleted', { taskId, spaceId });
+
+    res.json({ message: 'Задача удалена' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Ошибка удаления' });
+  }
+});
 // Раздача фронтенда
 const path = require('path');
 
