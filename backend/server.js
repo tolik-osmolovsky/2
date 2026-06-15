@@ -487,6 +487,20 @@ io.on('connection', (socket) => {
   });
 });
 
+// Раздача фронтенда
+const path = require('path');
+
+// Статические файлы (CSS, JS, изображения)
+app.use(express.static(path.join(__dirname, 'frontend')));
+
+// Отдаём index.html для всех не-API маршрутов
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+});
+
 // Запуск сервера
 server.listen(process.env.PORT, () => {
   console.log(`Server running on port ${process.env.PORT}`);
