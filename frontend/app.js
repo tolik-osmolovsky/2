@@ -13,7 +13,6 @@ if (currentToken) {
 
 async function checkAuth() {
     try {
-        // Просто проверяем, что токен есть и можно загрузить пространства
         const response = await fetch(`${API_URL}/my-spaces`, {
             headers: { 'Authorization': `Bearer ${currentToken}` }
         });
@@ -35,7 +34,7 @@ async function checkAuth() {
 }
 
 function initSocket() {
-    socket = io('http://localhost:3000', {
+    socket = io('https://collaborative-daily.onrender.com', {
         auth: { token: currentToken }
     });
     
@@ -62,6 +61,19 @@ function initSocket() {
         if (currentSpace) {
             loadTasks();
         }
+    });
+    
+    socket.on('task_deleted', (data) => {
+        if (currentSpace && data.spaceId === currentSpace.id) {
+            loadTasks();
+        }
+    });
+    
+    socket.on('space_deleted', (data) => {
+        if (currentSpace && data.spaceId === currentSpace.id) {
+            backToSpaces();
+        }
+        loadSpaces();
     });
 }
 
@@ -136,17 +148,16 @@ async function loadSpaces() {
         const spacesListDiv = document.getElementById('spacesList');
         
         if (spaces.length === 0) {
-            spacesListDiv.innerHTML = '<p>У вас пока нет ежедневников. Создайте новый или присоединитесь по коду!</p>';
+            spacesListDiv.innerHTML = '<p style="text-align: center; padding: 40px;">✨ У вас пока нет ежедневников. Создайте новый или присоединитесь по коду!</p>';
             return;
         }
         
         spacesListDiv.innerHTML = spaces.map(space => `
-            <div class="space-card" onclick="openSpace(${space.id}, '${space.name}', '${space.invite_code}')">
-                <h3>📓 ${space.name}</h3>
-                <p>${space.description || 'Без описания'}</p>
+            <div class="space-card" onclick="openSpace(${space.id}, '${escapeHtml(space.name)}', '${space.invite_code}')">
+                <h3>📓 ${escapeHtml(space.name)}</h3>
+                <p>${escapeHtml(space.description) || 'Без описания'}</p>
                 <small>👥 Участников: ${space.members_count}</small>
-                <br>
-                <small>🔑 Код: ${space.invite_code}</small>
+                <button class="delete-space-btn btn-small" onclick="deleteSpace(event, ${space.id})">🗑️</button>
             </div>
         `).join('');
     } catch (error) {
@@ -154,9 +165,62 @@ async function loadSpaces() {
     }
 }
 
+async function deleteSpace(event, spaceId) {
+    event.stopPropagation();
+    if (!confirm('Вы уверены, что хотите удалить этот ежедневник? Все задачи будут удалены без возможности восстановления!')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/spaces/${spaceId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+        
+        if (response.ok) {
+            if (currentSpace && currentSpace.id === spaceId) {
+                backToSpaces();
+            }
+            loadSpaces();
+            alert('Ежедневник удален');
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Ошибка удаления');
+        }
+    } catch (error) {
+        alert('Ошибка соединения');
+    }
+}
+
+async function deleteTask(taskId) {
+    if (!confirm('Удалить задачу?')) return;
+    
+    try {
+        const response = await fetch(`${API_URL}/tasks/${taskId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+        
+        if (response.ok) {
+            await loadTasks();
+            alert('Задача удалена');
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Ошибка удаления');
+        }
+    } catch (error) {
+        alert('Ошибка соединения');
+    }
+}
+
 async function createSpace() {
     const name = document.getElementById('spaceName').value;
     const description = document.getElementById('spaceDescription').value;
+    
+    if (!name) {
+        alert('Введите название ежедневника');
+        return;
+    }
     
     try {
         const response = await fetch(`${API_URL}/spaces`, {
@@ -181,6 +245,11 @@ async function createSpace() {
 
 async function joinSpace() {
     const inviteCode = document.getElementById('inviteCode').value.toUpperCase();
+    
+    if (!inviteCode) {
+        alert('Введите код приглашения');
+        return;
+    }
     
     try {
         const response = await fetch(`${API_URL}/spaces/join/${inviteCode}`, {
@@ -211,8 +280,9 @@ async function openSpace(spaceId, spaceName, inviteCode) {
     document.getElementById('tasksView').classList.remove('hidden');
     document.getElementById('currentSpaceName').innerText = spaceName;
     document.getElementById('inviteInfo').innerHTML = `
-        🔗 Код для приглашения: <strong>${inviteCode}</strong> 
-        <button onclick="copyInviteCode()">📋 Копировать</button>
+        <span>🔗 Код для приглашения:</span>
+        <span class="invite-code-text">${inviteCode}</span>
+        <button onclick="copyInviteCode()" class="btn-small">📋 Копировать</button>
     `;
     
     if (socket) {
@@ -232,7 +302,7 @@ async function loadMembers() {
         const members = await response.json();
         const select = document.getElementById('taskAssignedTo');
         select.innerHTML = '<option value="">Не назначать</option>' + 
-            members.map(m => `<option value="${m.id}">${m.full_name}</option>`).join('');
+            members.map(m => `<option value="${m.id}">${escapeHtml(m.full_name)}</option>`).join('');
     } catch (error) {
         console.error('Error loading members:', error);
     }
@@ -248,7 +318,7 @@ async function loadTasks() {
         const tasksListDiv = document.getElementById('tasksList');
         
         if (tasks.length === 0) {
-            tasksListDiv.innerHTML = '<p>✨ Пока нет задач. Добавьте первую задачу!</p>';
+            tasksListDiv.innerHTML = '<p style="text-align: center; padding: 40px;">✨ Пока нет задач. Добавьте первую задачу!</p>';
             return;
         }
         
@@ -261,27 +331,29 @@ async function loadTasks() {
                         ${escapeHtml(task.title)}
                     </span>
                 </div>
-                ${task.description ? `<p>📝 ${escapeHtml(task.description)}</p>` : ''}
+                ${task.description ? `<p style="margin: 8px 0 0 32px; color: #666; font-size: 14px;">📝 ${escapeHtml(task.description)}</p>` : ''}
                 <div class="task-meta">
                     <span class="due-date">📅 ${formatDate(task.due_date)} ${task.due_time ? ' в ' + task.due_time.slice(0,5) : ''}</span>
-                    <span>👤 Создал: ${task.created_by_name || 'Unknown'}</span>
-                    ${task.assigned_to_name ? `<span>🎯 Назначено: ${task.assigned_to_name}</span>` : ''}
+                    <span>👤 Создал: ${escapeHtml(task.created_by_name) || 'Unknown'}</span>
+                    ${task.assigned_to_name ? `<span>🎯 Назначено: ${escapeHtml(task.assigned_to_name)}</span>` : ''}
                     ${task.completed_at ? `<span>✅ Выполнено: ${new Date(task.completed_at).toLocaleString()}</span>` : ''}
                 </div>
+                
+                <button class="delete-task-btn btn-small" onclick="deleteTask(${task.id})">🗑️</button>
                 
                 <div class="comments-section">
                     <div class="comments-list">
                         ${(task.comments || []).map(comment => `
                             <div class="comment">
                                 <span class="comment-author">${escapeHtml(comment.full_name)}</span>
-                                <span>${escapeHtml(comment.comment)}</span>
-                                <small>${new Date(comment.created_at).toLocaleString()}</small>
+                                <span class="comment-text">${escapeHtml(comment.comment)}</span>
+                                <div class="comment-date">${new Date(comment.created_at).toLocaleString()}</div>
                             </div>
                         `).join('')}
                     </div>
                     <div class="add-comment">
                         <input type="text" id="comment-${task.id}" placeholder="Написать комментарий...">
-                        <button onclick="addComment(${task.id})">💬</button>
+                        <button onclick="addComment(${task.id})" class="btn-small">💬</button>
                     </div>
                 </div>
             </div>
@@ -412,11 +484,12 @@ function hideCreateSpaceForm() {
 }
 
 function showAddTaskForm() {
-    document.getElementById('addTaskForm').classList.remove('hidden');
+    const form = document.getElementById('addTaskForm');
+    form.classList.toggle('active');
 }
 
 function hideAddTaskForm() {
-    document.getElementById('addTaskForm').classList.add('hidden');
+    document.getElementById('addTaskForm').classList.remove('active');
 }
 
 function showJoinSpaceForm() {
