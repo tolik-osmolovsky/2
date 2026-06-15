@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'https://collaborative-daily.onrender.com/api';
 let currentToken = localStorage.getItem('token');
 let currentUser = null;
 let currentSpace = null;
