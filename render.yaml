@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: collaborative-daily
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: collaborative-daily-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: collaborative-daily-db
+          property: port
+      - key: DB_USER
+        fromDatabase:
+          name: collaborative-daily-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: collaborative-daily-db
+          property: password
+      - key: DB_NAME
+        fromDatabase:
+          name: collaborative-daily-db
+          property: database
+      - key: JWT_SECRET
+        generateValue: true
+
+databases:
+  - name: collaborative-daily-db
+    plan: free
