@@ -24,7 +24,6 @@
             padding: 16px;
         }
 
-        /* Формы авторизации */
         .auth-container {
             display: flex;
             justify-content: center;
@@ -45,6 +44,17 @@
             margin-bottom: 24px;
             color: #333;
             font-size: 24px;
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .auth-buttons button {
+            flex: 1;
+            min-width: 120px;
         }
 
         .form-group {
@@ -114,6 +124,14 @@
             background: #e53e3e;
         }
 
+        .btn-edit {
+            background: #4299e1;
+        }
+
+        .btn-edit:hover {
+            background: #3182ce;
+        }
+
         .btn-small {
             padding: 6px 12px;
             font-size: 12px;
@@ -125,7 +143,6 @@
             font-size: 14px;
         }
 
-        /* Дашборд */
         .dashboard {
             background: white;
             border-radius: 16px;
@@ -156,7 +173,6 @@
             flex-wrap: wrap;
         }
 
-        /* Сетка пространств */
         .spaces-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -213,7 +229,6 @@
             background: #e53e3e;
         }
 
-        /* Задачи */
         .tasks-header {
             display: flex;
             justify-content: space-between;
@@ -240,7 +255,7 @@
             border: 1px solid #e0e0e0;
             border-radius: 12px;
             padding: 16px;
-            padding-right: 70px;
+            padding-right: 130px;
             margin-bottom: 16px;
             transition: all 0.3s;
             position: relative;
@@ -290,18 +305,18 @@
             color: #e53e3e;
         }
 
-        .delete-task-btn {
+        .task-actions {
             position: absolute;
             top: 12px;
             right: 12px;
-            background: #f56565;
-            padding: 4px 10px;
-            font-size: 12px;
+            display: flex;
+            gap: 6px;
             z-index: 2;
         }
 
-        .delete-task-btn:hover {
-            background: #e53e3e;
+        .task-actions button {
+            padding: 4px 10px;
+            font-size: 12px;
         }
 
         .comments-section {
@@ -389,17 +404,6 @@
             display: none;
         }
 
-        /* Перенос длинных слов */
-        .task-card,
-        .task-title,
-        .comment-text,
-        .comment {
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            word-break: break-word;
-        }
-
-        /* Ограничение для описания задачи */
         .task-description {
             max-height: 150px;
             overflow-y: auto;
@@ -409,157 +413,63 @@
             white-space: pre-wrap;
         }
 
-        /* Мобильная адаптация */
         @media (max-width: 768px) {
-            body {
-                padding: 8px;
-            }
-
-            .container {
-                padding: 8px;
-            }
-
-            .dashboard {
-                padding: 16px;
-            }
-
-            .header h1 {
-                font-size: 20px;
-            }
-
-            .spaces-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-
-            .task-meta {
-                gap: 12px;
-                font-size: 12px;
-            }
-
-            .invite-info {
-                flex-direction: column;
-                align-items: stretch;
-                text-align: center;
-            }
-
-            .invite-info .invite-code-text {
-                text-align: center;
-            }
-
-            .action-buttons {
-                flex-direction: column;
-            }
-
-            .action-buttons button {
-                width: 100%;
-            }
-
-            .task-title {
-                font-size: 15px;
-                padding-right: 10px;
-            }
-
-            .task-card {
-                padding-right: 60px;
-            }
-
-            .delete-task-btn {
-                top: 8px;
-                right: 8px;
-                padding: 4px 8px;
-                font-size: 11px;
-            }
-
-            .delete-space-btn {
-                top: 8px;
-                right: 8px;
-                padding: 4px 8px;
-                font-size: 11px;
-            }
-
-            .back-button {
-                margin-bottom: 16px;
-            }
-
-            .back-button button {
-                width: 100%;
-            }
-
-            .tasks-header {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .tasks-header button {
-                width: 100%;
-            }
+            body { padding: 8px; }
+            .container { padding: 8px; }
+            .dashboard { padding: 16px; }
+            .header h1 { font-size: 20px; }
+            .spaces-grid { grid-template-columns: 1fr; gap: 12px; }
+            .task-meta { gap: 12px; font-size: 12px; }
+            .invite-info { flex-direction: column; align-items: stretch; text-align: center; }
+            .invite-info .invite-code-text { text-align: center; }
+            .action-buttons { flex-direction: column; }
+            .action-buttons button { width: 100%; }
+            .task-title { font-size: 15px; padding-right: 10px; }
+            .task-card { padding-right: 80px; }
+            .task-actions { top: 8px; right: 8px; flex-direction: column; gap: 4px; }
+            .task-actions button { padding: 3px 8px; font-size: 10px; }
+            .back-button { margin-bottom: 16px; }
+            .back-button button { width: 100%; }
+            .tasks-header { flex-direction: column; align-items: stretch; }
+            .tasks-header button { width: 100%; }
         }
 
         @media (max-width: 480px) {
-            .auth-box {
-                padding: 24px 20px;
+            .auth-box { padding: 24px 20px; }
+            .auth-buttons { flex-direction: column; }
+            .auth-buttons button { width: 100%; margin-left: 0 !important; }
+            .auth-box button { width: 100%; margin-bottom: 8px; }
+            .auth-box button:last-child { margin-bottom: 0; }
+            .header { flex-direction: column; align-items: stretch; }
+            .user-info { justify-content: space-between; }
+            .space-card { padding: 16px; padding-right: 60px; }
+            .space-card h3 { font-size: 16px; }
+            .add-task-form { padding: 16px; }
+            .add-task-form button { width: 100%; margin-bottom: 8px; }
+            .add-task-form button:last-child { margin-bottom: 0; }
+            .comment { font-size: 13px; padding: 8px 10px; }
+            .invite-info { padding: 10px 12px; }
+            .invite-code-text { font-size: 16px; padding: 4px 10px; }
+        }
+        @media (max-width: 480px) {
+            #loginForm > div:last-child {
+                flex-direction: column !important;
             }
-
-            .auth-box button {
-                width: 100%;
-                margin-bottom: 8px;
+            #loginForm > div:last-child button {
+                width: 100% !important;
+                margin-left: 0 !important;
             }
-
-            .auth-box button:last-child {
-                margin-bottom: 0;
+            #registerForm > div:last-child {
+                flex-direction: column !important;
             }
-
-            .header {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .user-info {
-                justify-content: space-between;
-            }
-
-            .space-card {
-                padding: 16px;
-                padding-right: 60px;
-            }
-
-            .space-card h3 {
-                font-size: 16px;
-            }
-
-            .add-task-form {
-                padding: 16px;
-            }
-
-            .add-task-form button {
-                width: 100%;
-                margin-bottom: 8px;
-            }
-
-            .add-task-form button:last-child {
-                margin-bottom: 0;
-            }
-
-            .comment {
-                font-size: 13px;
-                padding: 8px 10px;
-            }
-
-            .invite-info {
-                padding: 10px 12px;
-            }
-
-            .invite-code-text {
-                font-size: 16px;
-                padding: 4px 10px;
+            #registerForm > div:last-child button {
+                width: 100% !important;
             }
         }
     </style>
 </head>
 <body>
     <div id="app">
-        <!-- Аутентификация -->
         <div id="authContainer" class="auth-container">
             <div class="auth-box">
                 <h2>📅 Совместный ежедневник</h2>
@@ -572,8 +482,10 @@
                         <label>Пароль</label>
                         <input type="password" id="loginPassword" placeholder="******">
                     </div>
-                    <button onclick="login()">Войти</button>
-                    <button onclick="showRegister()" class="btn-secondary" style="margin-left: 10px;">Регистрация</button>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button onclick="login()" style="flex: 1;">Войти</button>
+                        <button onclick="showRegister()" class="btn-secondary" style="flex: 1;">Регистрация</button>
+                    </div>
                     <div id="authError" class="error"></div>
                 </div>
                 <div id="registerForm" class="hidden">
@@ -589,14 +501,15 @@
                         <label>Пароль</label>
                         <input type="password" id="regPassword" placeholder="минимум 6 символов">
                     </div>
-                    <button onclick="register()">Зарегистрироваться</button>
-                    <button onclick="showLogin()">Назад</button>
+                    <div class="auth-buttons">
+                        <button onclick="register()">Зарегистрироваться</button>
+                        <button onclick="showLogin()" class="btn-secondary">Назад</button>
+                    </div>
                     <div id="regError" class="error"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Дашборд -->
         <div id="dashboard" class="container hidden">
             <div class="dashboard">
                 <div class="header">
@@ -607,7 +520,6 @@
                     </div>
                 </div>
 
-                <!-- Список пространств -->
                 <div id="spacesView">
                     <div class="action-buttons">
                         <button onclick="showCreateSpaceForm()">➕ Создать ежедневник</button>
@@ -616,7 +528,6 @@
                     <div id="spacesList" class="spaces-grid"></div>
                 </div>
 
-                <!-- Форма создания пространства -->
                 <div id="createSpaceForm" class="hidden">
                     <h3>Создать ежедневник</h3>
                     <div class="form-group">
@@ -631,7 +542,6 @@
                     <button onclick="hideCreateSpaceForm()" class="btn-secondary">Отмена</button>
                 </div>
 
-                <!-- Задачи пространства -->
                 <div id="tasksView" class="hidden">
                     <div class="back-button">
                         <button onclick="backToSpaces()" class="btn-secondary btn-small" style="width: 100%;">← Назад к списку</button>
@@ -644,7 +554,6 @@
                     
                     <div id="inviteInfo" class="invite-info"></div>
                     
-                    <!-- Форма добавления задачи -->
                     <div id="addTaskForm" class="add-task-form">
                         <h3>Новая задача</h3>
                         <div class="form-group">
@@ -670,12 +579,38 @@
                         <button onclick="createTask()">Создать</button>
                         <button onclick="hideAddTaskForm()" class="btn-secondary">Отмена</button>
                     </div>
+
+                    <!-- ФОРМА РЕДАКТИРОВАНИЯ -->
+                    <div id="editTaskForm" class="add-task-form">
+                        <h3>✏️ Редактировать задачу</h3>
+                        <input type="hidden" id="editTaskId">
+                        <div class="form-group">
+                            <label>Название</label>
+                            <input type="text" id="editTaskTitle" placeholder="Что нужно сделать?">
+                        </div>
+                        <div class="form-group">
+                            <label>Описание</label>
+                            <textarea id="editTaskDescription" rows="2"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Дата выполнения</label>
+                            <input type="date" id="editTaskDueDate">
+                        </div>
+                        <div class="form-group">
+                            <label>Время</label>
+                            <input type="time" id="editTaskDueTime">
+                        </div>
+                        <div class="form-group">
+                            <label>Назначить</label>
+                            <select id="editTaskAssignedTo"></select>
+                        </div>
+                        <button onclick="updateTask()" class="btn-edit">💾 Сохранить</button>
+                        <button onclick="hideEditTaskForm()" class="btn-secondary">Отмена</button>
+                    </div>
                     
-                    <!-- Список задач -->
                     <div id="tasksList"></div>
                 </div>
 
-                <!-- Форма присоединения -->
                 <div id="joinSpaceForm" class="hidden">
                     <h3>Присоединиться по коду</h3>
                     <div class="form-group">
