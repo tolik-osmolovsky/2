@@ -171,6 +171,7 @@
             cursor: pointer;
             transition: all 0.3s;
             position: relative;
+            padding-right: 70px;
         }
 
         .space-card:hover {
@@ -181,13 +182,16 @@
         .space-card h3 {
             font-size: 18px;
             margin-bottom: 8px;
-            padding-right: 60px;
+            padding-right: 10px;
         }
 
         .space-card p {
             color: #666;
             font-size: 14px;
             margin-bottom: 12px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .space-card small {
@@ -202,6 +206,7 @@
             background: #f56565;
             padding: 6px 10px;
             font-size: 12px;
+            z-index: 2;
         }
 
         .delete-space-btn:hover {
@@ -235,6 +240,7 @@
             border: 1px solid #e0e0e0;
             border-radius: 12px;
             padding: 16px;
+            padding-right: 70px;
             margin-bottom: 16px;
             transition: all 0.3s;
             position: relative;
@@ -252,7 +258,7 @@
             align-items: flex-start;
             gap: 12px;
             margin-bottom: 12px;
-            padding-right: 70px;
+            padding-right: 10px;
         }
 
         .task-title input[type="checkbox"] {
@@ -266,6 +272,9 @@
         .task-title span {
             flex: 1;
             line-height: 1.4;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .task-meta {
@@ -288,6 +297,11 @@
             background: #f56565;
             padding: 4px 10px;
             font-size: 12px;
+            z-index: 2;
+        }
+
+        .delete-task-btn:hover {
+            background: #e53e3e;
         }
 
         .comments-section {
@@ -302,6 +316,9 @@
             margin: 8px 0;
             border-radius: 8px;
             font-size: 14px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .comment-author {
@@ -363,8 +380,33 @@
             margin-bottom: 20px;
         }
 
+        .back-button {
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
         .hidden {
             display: none;
+        }
+
+        /* Перенос длинных слов */
+        .task-card,
+        .task-title,
+        .comment-text,
+        .comment {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        /* Ограничение для описания задачи */
+        .task-description {
+            max-height: 150px;
+            overflow-y: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            white-space: pre-wrap;
         }
 
         /* Мобильная адаптация */
@@ -398,6 +440,11 @@
             .invite-info {
                 flex-direction: column;
                 align-items: stretch;
+                text-align: center;
+            }
+
+            .invite-info .invite-code-text {
+                text-align: center;
             }
 
             .action-buttons {
@@ -410,12 +457,42 @@
 
             .task-title {
                 font-size: 15px;
+                padding-right: 10px;
+            }
+
+            .task-card {
                 padding-right: 60px;
             }
 
             .delete-task-btn {
                 top: 8px;
                 right: 8px;
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+
+            .delete-space-btn {
+                top: 8px;
+                right: 8px;
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+
+            .back-button {
+                margin-bottom: 16px;
+            }
+
+            .back-button button {
+                width: 100%;
+            }
+
+            .tasks-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .tasks-header button {
+                width: 100%;
             }
         }
 
@@ -424,9 +501,13 @@
                 padding: 24px 20px;
             }
 
-            button {
+            .auth-box button {
                 width: 100%;
                 margin-bottom: 8px;
+            }
+
+            .auth-box button:last-child {
+                margin-bottom: 0;
             }
 
             .header {
@@ -437,21 +518,42 @@
             .user-info {
                 justify-content: space-between;
             }
-        }
-        /* Перенос длинных слов */
-        .task-card,
-        .task-title,
-        .comment-text,
-        .comment {
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            word-break: break-word;
-        }
 
-        /* Ограничение для описания задачи */
-        .task-description {
-            max-height: 150px;
-            overflow-y: auto;
+            .space-card {
+                padding: 16px;
+                padding-right: 60px;
+            }
+
+            .space-card h3 {
+                font-size: 16px;
+            }
+
+            .add-task-form {
+                padding: 16px;
+            }
+
+            .add-task-form button {
+                width: 100%;
+                margin-bottom: 8px;
+            }
+
+            .add-task-form button:last-child {
+                margin-bottom: 0;
+            }
+
+            .comment {
+                font-size: 13px;
+                padding: 8px 10px;
+            }
+
+            .invite-info {
+                padding: 10px 12px;
+            }
+
+            .invite-code-text {
+                font-size: 16px;
+                padding: 4px 10px;
+            }
         }
     </style>
 </head>
@@ -531,7 +633,9 @@
 
                 <!-- Задачи пространства -->
                 <div id="tasksView" class="hidden">
-                    <button onclick="backToSpaces()" class="btn-secondary btn-small" style="margin-bottom: 16px;">← Назад к списку</button>
+                    <div class="back-button">
+                        <button onclick="backToSpaces()" class="btn-secondary btn-small" style="width: 100%;">← Назад к списку</button>
+                    </div>
                     
                     <div class="tasks-header">
                         <h2 id="currentSpaceName"></h2>
