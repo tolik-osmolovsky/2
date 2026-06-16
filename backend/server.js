@@ -6,6 +6,7 @@ const cors = require('cors');
 const { body, validationResult } = require('express-validator');
 const http = require('http');
 const socketIo = require('socket.io');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
@@ -39,7 +40,51 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Middleware для проверки JWT
+// ============ ЗАЩИТА ОТ БРУТФОРСА ============
+
+// 1. Строгий лимит для логина (защита от подбора паролей)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 минут
+  max: 5,                   // максимум 5 попыток
+  message: {
+    error: 'Слишком много попыток входа. Пожалуйста, попробуйте через 15 минут.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Ограничиваем по email, чтобы злоумышленник не мог подбирать пароль к конкретному аккаунту с разных IP
+  keyGenerator: (req) => req.body.email || req.ip
+});
+
+// 2. Лимит для регистрации (защита от спама аккаунтами)
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 час
+  max: 10,                  // максимум 10 регистраций с одного IP
+  message: {
+    error: 'Слишком много попыток регистрации. Пожалуйста, попробуйте через час.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Для регистрации ограничиваем по IP
+  keyGenerator: (req) => req.ip
+});
+
+// 3. Глобальный лимит для всех API (защита от DoS-атак)
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 минута
+  max: 100,            // 100 запросов в минуту с одного IP
+  message: {
+    error: 'Слишком много запросов. Пожалуйста, попробуйте позже.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Пропускаем успешные запросы (чтобы не наказывать легитимных пользователей)
+  skipSuccessfulRequests: true
+});
+
+// Применяем глобальный лимит ко всем API
+app.use('/api/', globalLimiter);
+
+// ============ Middleware для проверки JWT ============
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -55,8 +100,8 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// ============ РЕГИСТРАЦИЯ И ЛОГИН ============
-app.post('/api/register', [
+// ============ РЕГИСТРАЦИЯ (с защитой) ============
+app.post('/api/register', registerLimiter, [
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 6 }),
   body('full_name').notEmpty().trim()
@@ -95,7 +140,8 @@ app.post('/api/register', [
   }
 });
 
-app.post('/api/login', [
+// ============ ЛОГИН (с защитой) ============
+app.post('/api/login', loginLimiter, [
   body('email').isEmail(),
   body('password').notEmpty()
 ], async (req, res) => {
@@ -340,6 +386,7 @@ app.get('/api/tasks/:taskId', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Ошибка загрузки задачи' });
   }
 });
+
 // ============ ОБНОВЛЕНИЕ ЗАДАЧИ (PUT) ============
 app.put('/api/tasks/:taskId', authenticateToken, [
   body('title').notEmpty(),
@@ -350,7 +397,6 @@ app.put('/api/tasks/:taskId', authenticateToken, [
   const userId = req.user.id;
 
   try {
-    // Проверяем доступ
     const taskResult = await pool.query(
       `SELECT t.*, sm.user_id 
        FROM tasks t
@@ -366,7 +412,6 @@ app.put('/api/tasks/:taskId', authenticateToken, [
     const task = taskResult.rows[0];
     const spaceId = task.space_id;
 
-    // Обновляем задачу
     const result = await pool.query(
       `UPDATE tasks 
        SET title = $1, description = $2, due_date = $3, due_time = $4, 
@@ -375,14 +420,12 @@ app.put('/api/tasks/:taskId', authenticateToken, [
       [title, description, due_date, due_time, assigned_to || null, taskId]
     );
 
-    // Записываем в историю
     await pool.query(
       `INSERT INTO task_history (task_id, user_id, action, new_value)
        VALUES ($1, $2, $3, $4)`,
       [taskId, userId, 'updated', 'Задача обновлена']
     );
 
-    // Отправляем real-time уведомление
     io.to(`space_${spaceId}`).emit('task_updated', result.rows[0]);
 
     res.json(result.rows[0]);
