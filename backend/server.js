@@ -312,6 +312,34 @@ app.post('/api/tasks', authenticateToken, [
   }
 });
 
+// Получить одну задачу по ID
+app.get('/api/tasks/:taskId', authenticateToken, async (req, res) => {
+  const { taskId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const result = await pool.query(
+      `SELECT t.*,
+        creator.full_name as created_by_name,
+        assignee.full_name as assigned_to_name
+       FROM tasks t
+       LEFT JOIN users creator ON t.created_by = creator.id
+       LEFT JOIN users assignee ON t.assigned_to = assignee.id
+       JOIN space_members sm ON t.space_id = sm.space_id
+       WHERE t.id = $1 AND sm.user_id = $2`,
+      [taskId, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Задача не найдена' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Ошибка загрузки задачи' });
+  }
+});
 // ============ ОБНОВЛЕНИЕ ЗАДАЧИ (PUT) ============
 app.put('/api/tasks/:taskId', authenticateToken, [
   body('title').notEmpty(),
