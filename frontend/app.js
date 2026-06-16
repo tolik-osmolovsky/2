@@ -4,7 +4,6 @@ let currentUser = null;
 let currentSpace = null;
 let socket = null;
 
-// Инициализация
 if (currentToken) {
     checkAuth();
 } else {
@@ -52,6 +51,12 @@ function initSocket() {
     });
     
     socket.on('task_status_changed', (task) => {
+        if (currentSpace && task.space_id === currentSpace.id) {
+            loadTasks();
+        }
+    });
+    
+    socket.on('task_updated', (task) => {
         if (currentSpace && task.space_id === currentSpace.id) {
             loadTasks();
         }
@@ -301,8 +306,13 @@ async function loadMembers() {
         
         const members = await response.json();
         const select = document.getElementById('taskAssignedTo');
-        select.innerHTML = '<option value="">Не назначать</option>' + 
+        const editSelect = document.getElementById('editTaskAssignedTo');
+        
+        const options = '<option value="">Не назначать</option>' + 
             members.map(m => `<option value="${m.id}">${escapeHtml(m.full_name)}</option>`).join('');
+        
+        select.innerHTML = options;
+        editSelect.innerHTML = options;
     } catch (error) {
         console.error('Error loading members:', error);
     }
@@ -331,7 +341,7 @@ async function loadTasks() {
                         ${escapeHtml(task.title)}
                     </span>
                 </div>
-                ${task.description ? `<p class="task-description" style="margin: 8px 0 0 32px; color: #666; font-size: 14px; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; white-space: pre-wrap;">📝 ${escapeHtml(task.description)}</p>` : ''}
+                ${task.description ? `<p class="task-description" style="margin: 8px 0 0 32px; color: #666; font-size: 14px;">📝 ${escapeHtml(task.description)}</p>` : ''}
                 <div class="task-meta">
                     <span class="due-date">📅 ${formatDate(task.due_date)} ${task.due_time ? ' в ' + task.due_time.slice(0,5) : ''}</span>
                     <span>👤 Создал: ${escapeHtml(task.created_by_name) || 'Unknown'}</span>
@@ -339,7 +349,10 @@ async function loadTasks() {
                     ${task.completed_at ? `<span>✅ Выполнено: ${new Date(task.completed_at).toLocaleString()}</span>` : ''}
                 </div>
                 
-                <button class="delete-task-btn btn-small" onclick="deleteTask(${task.id})">🗑️</button>
+                <div class="task-actions">
+                    <button class="btn-edit btn-small" onclick="editTask(${task.id})">✏️</button>
+                    <button class="delete-task-btn btn-small" onclick="deleteTask(${task.id})">🗑️</button>
+                </div>
                 
                 <div class="comments-section">
                     <div class="comments-list">
@@ -363,6 +376,86 @@ async function loadTasks() {
     }
 }
 
+// ============ РЕДАКТИРОВАНИЕ ЗАДАЧИ ============
+async function editTask(taskId) {
+    try {
+        const response = await fetch(`${API_URL}/spaces/${currentSpace.id}/tasks`, {
+            headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+        const tasks = await response.json();
+        const task = tasks.find(t => t.id === taskId);
+        
+        if (!task) {
+            alert('Задача не найдена');
+            return;
+        }
+        
+        document.getElementById('editTaskId').value = task.id;
+        document.getElementById('editTaskTitle').value = task.title;
+        document.getElementById('editTaskDescription').value = task.description || '';
+        document.getElementById('editTaskDueDate').value = task.due_date;
+        document.getElementById('editTaskDueTime').value = task.due_time || '';
+        document.getElementById('editTaskAssignedTo').value = task.assigned_to || '';
+        
+        document.getElementById('editTaskForm').classList.add('active');
+        document.getElementById('editTaskForm').scrollIntoView({ behavior: 'smooth' });
+    } catch (error) {
+        alert('Ошибка загрузки задачи');
+    }
+}
+
+async function updateTask() {
+    const taskId = document.getElementById('editTaskId').value;
+    const title = document.getElementById('editTaskTitle').value;
+    const description = document.getElementById('editTaskDescription').value;
+    const due_date = document.getElementById('editTaskDueDate').value;
+    const due_time = document.getElementById('editTaskDueTime').value;
+    const assigned_to = document.getElementById('editTaskAssignedTo').value;
+    
+    if (!title || !due_date) {
+        alert('Заполните название и дату выполнения!');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/tasks/${taskId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentToken}`
+            },
+            body: JSON.stringify({
+                title,
+                description,
+                due_date,
+                due_time: due_time || null,
+                assigned_to: assigned_to || null
+            })
+        });
+        
+        if (response.ok) {
+            hideEditTaskForm();
+            await loadTasks();
+            alert('✅ Задача обновлена!');
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Ошибка обновления задачи');
+        }
+    } catch (error) {
+        alert('Ошибка соединения');
+    }
+}
+
+function hideEditTaskForm() {
+    document.getElementById('editTaskForm').classList.remove('active');
+    document.getElementById('editTaskId').value = '';
+    document.getElementById('editTaskTitle').value = '';
+    document.getElementById('editTaskDescription').value = '';
+    document.getElementById('editTaskDueDate').value = '';
+    document.getElementById('editTaskDueTime').value = '';
+}
+
+// ============ ОСТАЛЬНЫЕ ФУНКЦИИ ============
 async function createTask() {
     const title = document.getElementById('taskTitle').value;
     const description = document.getElementById('taskDescription').value;
